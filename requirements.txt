@@ -6,9 +6,7 @@ playwright
 python-dotenv
 openai
 openai-whisper
-opencv-python-headless
-paddlepaddle==2.6.1
-paddleocr>=2.7.0
+# Torch CPU 버전 (용량 다이어트)
 --index-url https://download.pytorch.org/whl/cpu
 torch
 sentence-transformers
