@@ -3,7 +3,6 @@ uvicorn
 pydantic
 requests
 playwright
-# paddlepaddle 대신 cpu 전용 버전을 명시하거나, 
-# 렌더 환경에서 빌드가 안 될 경우를 대비해 아래처럼 적습니다.
-paddlepaddle==2.6.1 
-paddleocr>=2.7.0
+paddlepaddle
+paddleocr
+python-dotenv
