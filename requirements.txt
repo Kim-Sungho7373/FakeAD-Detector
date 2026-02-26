@@ -3,10 +3,13 @@ uvicorn
 pydantic
 requests
 playwright
-paddlepaddle
-paddleocr
 python-dotenv
 openai
 openai-whisper
-torch --index-url https://download.pytorch.org/whl/cpu
+# CPU 전용 패들패들 (용량 절취)
+paddlepaddle==2.6.1
+paddleocr>=2.7.0
+# CPU 전용 토치 (빌드 속도 향상)
+--index-url https://download.pytorch.org/whl/cpu
+torch
 sentence-transformers
