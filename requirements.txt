@@ -6,10 +6,9 @@ playwright
 python-dotenv
 openai
 openai-whisper
-# CPU 전용 패들패들 (용량 절취)
+# CPU 환경에 최적화된 버전들
 paddlepaddle==2.6.1
 paddleocr>=2.7.0
-# CPU 전용 토치 (빌드 속도 향상)
 --index-url https://download.pytorch.org/whl/cpu
 torch
 sentence-transformers
