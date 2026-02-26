@@ -22,7 +22,7 @@ class DataIngestionPipeline:
     def extract_audio_from_video(self, video_url, output_filename="temp_audio"):
         print(f"\n🎥 [1] 유튜브 영상 다운로드 시작 (yt-dlp): {video_url}")
         
-        # 🌟 유튜브 로봇 차단 및 허깅페이스 DNS 에러 우회 옵션 추가!
+        # 🌟 유튜브 로봇 차단 및 403 Forbidden 에러 우회 옵션 강화
         ydl_opts = {
             'format': 'bestaudio/best',
             'outtmpl': f'{output_filename}.%(ext)s',
@@ -33,14 +33,25 @@ class DataIngestionPipeline:
             }],
             'quiet': True,
             'no_warnings': True,
-            'source_address': '0.0.0.0',  # 🌟 핵심: IPv4로 강제 접속 (Errno -5 에러 해결)
+            'source_address': '0.0.0.0',  # IPv4로 강제 접속 (Errno -5 에러 해결)
+            
+            # ⬇️ 403 에러 해결을 위해 추가된 핵심 옵션 ⬇️
+            'nocheckcertificate': True,
+            'http_headers': {
+                'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                'Accept-Language': 'ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7',
+                'Sec-Fetch-Mode': 'navigate',
+            },
+            # 🔥 위 옵션으로도 403 에러가 계속된다면 아래 주석을 해제하세요!
+            # 크롬 브라우저의 로그인 쿠키를 가져와 완벽하게 사람인 척 속입니다.
+            # 'cookiesfrombrowser': ('chrome', ), 
         }
         
         try:
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 ydl.download([video_url])
             
-        
             final_path = f"{output_filename}.mp3"
             print(f"✅ 오디오 추출 완료: {final_path}")
             return final_path
