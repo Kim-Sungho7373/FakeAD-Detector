@@ -22,7 +22,7 @@ class DataIngestionPipeline:
     def extract_audio_from_video(self, video_url, output_filename="temp_audio"):
         print(f"\n🎥 [1] 유튜브 영상 다운로드 시작 (yt-dlp): {video_url}")
         
-        # 유튜브 로봇 차단 우회 및 mp3 추출 최적화 옵션
+        # 🌟 유튜브 로봇 차단 및 허깅페이스 DNS 에러 우회 옵션 추가!
         ydl_opts = {
             'format': 'bestaudio/best',
             'outtmpl': f'{output_filename}.%(ext)s',
@@ -32,14 +32,15 @@ class DataIngestionPipeline:
                 'preferredquality': '192',
             }],
             'quiet': True,
-            'no_warnings': True
+            'no_warnings': True,
+            'source_address': '0.0.0.0',  # 🌟 핵심: IPv4로 강제 접속 (Errno -5 에러 해결)
         }
         
         try:
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 ydl.download([video_url])
             
-            # 변환된 mp3 파일명
+        
             final_path = f"{output_filename}.mp3"
             print(f"✅ 오디오 추출 완료: {final_path}")
             return final_path
