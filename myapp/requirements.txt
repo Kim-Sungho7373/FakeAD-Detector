@@ -1,8 +1,11 @@
-fastapi
-uvicorn
+flask
+gunicorn
 pydantic
 requests
 playwright
 paddlepaddle
 paddleocr
 python-dotenv
+openai
+torch
+sentence-transformers
