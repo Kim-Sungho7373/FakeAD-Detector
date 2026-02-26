@@ -11,3 +11,6 @@ torch
 sentence-transformers
 pytubefix
 python-mecab-ko
+numpy
+xgboost
+shap
