@@ -20,7 +20,12 @@ RUN pip install --no-cache-dir paddleocr>=2.7.0
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# [단계 5] 내 코드 복사 및 실행
+# [단계 5] 내 코드 복사
 COPY . .
 
+# [핵심 수정] 파이썬 경로에 myapp 폴더 추가
+# 이를 통해 app.py에서 'from step0_ingestion'을 바로 호출할 수 있게 됩니다.
+ENV PYTHONPATH="${PYTHONPATH}:/code/myapp"
+
+# [단계 6] 실행
 CMD ["uvicorn", "myapp.app:app", "--host", "0.0.0.0", "--port", "7860"]
