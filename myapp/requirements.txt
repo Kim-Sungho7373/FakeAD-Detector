@@ -1,0 +1,13 @@
+fastapi
+uvicorn
+pydantic
+requests
+playwright
+paddleocr
+paddlepaddle
+torch
+transformers
+sentence-transformers
+xgboost
+shap
+openai
