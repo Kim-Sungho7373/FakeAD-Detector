@@ -12,5 +12,5 @@ sentence-transformers
 pytubefix
 python-mecab-ko
 numpy
-xgboost
+xgboost==1.7.6
 shap
