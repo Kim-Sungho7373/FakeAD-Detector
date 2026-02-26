@@ -6,7 +6,6 @@ playwright
 python-dotenv
 openai
 openai-whisper
-# Torch CPU 버전 (용량 다이어트)
---index-url https://download.pytorch.org/whl/cpu
+--extra-index-url https://download.pytorch.org/whl/cpu
 torch
 sentence-transformers
