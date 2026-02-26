@@ -3,7 +3,7 @@ import gc
 import requests
 import torch
 import whisper
-from pytubefix import YouTube
+import yt_dlp
 from paddleocr import PaddleOCR
 from playwright.sync_api import sync_playwright
 import logging
@@ -20,13 +20,29 @@ class DataIngestionPipeline:
         print("🧹 메모리 정리 완료")
 
     def extract_audio_from_video(self, video_url, output_filename="temp_audio"):
-        print(f"\n🎥 [1] 유튜브 영상 다운로드 시작: {video_url}")
+        print(f"\n🎥 [1] 유튜브 영상 다운로드 시작 (yt-dlp): {video_url}")
+        
+        # 유튜브 로봇 차단 우회 및 mp3 추출 최적화 옵션
+        ydl_opts = {
+            'format': 'bestaudio/best',
+            'outtmpl': f'{output_filename}.%(ext)s',
+            'postprocessors': [{
+                'key': 'FFmpegExtractAudio',
+                'preferredcodec': 'mp3',
+                'preferredquality': '192',
+            }],
+            'quiet': True,
+            'no_warnings': True
+        }
+        
         try:
-            yt = YouTube(video_url, 'WEB')
-            audio_stream = yt.streams.get_audio_only()
-            file_path = audio_stream.download(filename=f"{output_filename}.mp4")
-            print(f"✅ 오디오 추출 완료: {file_path}")
-            return file_path
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                ydl.download([video_url])
+            
+            # 변환된 mp3 파일명
+            final_path = f"{output_filename}.mp3"
+            print(f"✅ 오디오 추출 완료: {final_path}")
+            return final_path
         except Exception as e:
             print(f"❌ 다운로드 실패: {e}")
             return None
@@ -52,8 +68,12 @@ class DataIngestionPipeline:
         
         raw_image_urls = []
         with sync_playwright() as p:
-            print("   -> 브라우저 창을 띄우고 페이지 로딩을 기다립니다...")
-            browser = p.chromium.launch(headless=False) 
+            print("   -> 브라우저 창을 백그라운드로 띄우고 페이지 로딩을 기다립니다...")
+            # 🚨 중요: 허깅페이스(서버) 환경을 위한 headless=True 및 도커 필수 옵션 추가!
+            browser = p.chromium.launch(
+                headless=True, 
+                args=["--no-sandbox", "--disable-setuid-sandbox"]
+            ) 
             page = browser.new_page()
             page.goto(product_url, wait_until="domcontentloaded", timeout=60000)
             page.wait_for_timeout(3000) 
@@ -151,28 +171,4 @@ class DataIngestionPipeline:
         final_text = "\n".join(all_extracted_text) # 줄바꿈으로 깔끔하게 합치기
         print("\n✅ 웹페이지 이미지 OCR 변환 완료!")
         return final_text
-
-
-# ==========================================
-# 실제 실행 테스트 코드 
-# ==========================================
-if __name__ == "__main__":
-    pipeline = DataIngestionPipeline()
     
-    # 1. 유튜브 STT 테스트 
-    test_video_url = "https://youtu.be/SJxSDRxd8Dc?si=t8dnIQciFulUlbVW" 
-    try:
-        audio_file = pipeline.extract_audio_from_video(test_video_url)
-        if audio_file:
-            stt_text = pipeline.run_stt(audio_file)
-            print(f"\n[STT 결과 (음성 -> 텍스트)]\n{stt_text[:500]}...\n")
-    except Exception as e:
-        print(f"유튜브/STT 처리 중 에러 발생: {e}")
-    
-    # 2. 웹페이지 OCR 테스트 
-    test_product_url = "https://brand.naver.com/pacsafe/products/9365045491" 
-    try:
-        ocr_text = pipeline.run_ocr_from_web(test_product_url)
-        print(f"\n[웹페이지 OCR 결과 (상세 이미지 -> 텍스트)]\n===========================\n{ocr_text}\n===========================")
-    except Exception as e:
-        print(f"OCR 처리 중 에러 발생: {e}")
