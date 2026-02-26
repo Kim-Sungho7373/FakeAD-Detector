@@ -10,3 +10,4 @@ openai-whisper
 torch
 sentence-transformers
 pytubefix
+python-mecab-ko
