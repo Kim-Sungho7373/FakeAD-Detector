@@ -1,3 +1,49 @@
+import os
+import math
+import uvicorn
+from fastapi import FastAPI
+from fastapi.responses import HTMLResponse
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+
+# ==========================================
+# 🌟 AI 레고 블록 불러오기
+# ==========================================
+# 폴더 구조에 따라 import 경로가 달라질 수 있습니다. 
+# myapp 폴더 안에서 실행된다면 아래와 같이 유지하세요.
+from step0_ingestion import DataIngestionPipeline
+from step1_lexical import LexicalAnalyzer
+from step2_semantic import SemanticAnalyzer
+from step3_rag import FactCheckerRAG
+from step4_xai import XAIScorer
+
+app = FastAPI()
+
+# 🌟 외부 호출 허용 (CORS 설정)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+print("==================================================")
+print(" ⏳ AI 엔진 및 딥러닝 모델들을 메모리에 올리는 중입니다...")
+print("==================================================")
+# Render 무료 플랜(512MB)에서 메모리 부족이 발생할 경우, 
+# 이 초기화 부분들을 함수 내부로 옮겨야 할 수도 있습니다.
+ingestion = DataIngestionPipeline()
+lexical = LexicalAnalyzer()
+semantic = SemanticAnalyzer()
+rag_checker = FactCheckerRAG()
+xai_scorer = XAIScorer()
+print("\n✅ [서버 준비 완료]\n")
+
+class AdRequest(BaseModel):
+    video_url: str
+    product_url: str
+
 # 1. 🌟 대시보드 웹 프론트엔드 (HTML)
 @app.get("/", response_class=HTMLResponse)
 async def serve_frontend():
@@ -126,3 +172,44 @@ async def serve_frontend():
     """
     return HTMLResponse(content=html_content)
 
+# 2. 분석 API
+@app.post("/api/analyze")
+async def api_analyze(req: AdRequest):
+    try:
+        # Step 0: 데이터 수집
+        stt_text = ingestion.run_stt(ingestion.extract_audio_from_video(req.video_url)) if req.video_url.strip() else ""
+        ocr_text = ingestion.run_ocr_from_web(req.product_url) if req.product_url.strip() else ""
+        combined_text = f"{stt_text}\n{ocr_text}".strip()
+        
+        if len(combined_text) < 5:
+            return {"status": "error", "error": "텍스트를 찾지 못했습니다."}
+
+        x1_score = lexical.calculate_x1_score(combined_text)
+        x2_score = semantic.calculate_x2_score(combined_text)
+        x3_score, matched_fact = rag_checker.calculate_x3_score(combined_text)
+        
+        final_score, shap_vals, _ = xai_scorer.calculate_final_score_and_explain(x1_score, x2_score, x3_score)
+        
+        # UI용 텍스트 생성 (제공해주신 로직과 동일)
+        detected_words = [word for word in lexical.lexicon.keys() if word in combined_text]
+        x1_details = f"적발 단어: {', '.join(detected_words)}" if detected_words else "금칙어 없음"
+        
+        x2_details = f"문맥 위험도: {x2_score:.1f}점"
+        x3_details = f"참조 규정: {matched_fact}"
+
+        xai_reasoning = "AI 분석 완료" # 간단하게 축약
+
+        return {
+            "status": "success",
+            "final_score": float(round(final_score, 2)),
+            "x1_details": x1_details,
+            "x2_details": x2_details,
+            "x3_details": x3_details,
+            "xai_reasoning": xai_reasoning
+        }
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+if __name__ == "__main__":
+    # 로컬 테스트용
+    uvicorn.run("app:app", host="127.0.0.1", port=8000, reload=True)
