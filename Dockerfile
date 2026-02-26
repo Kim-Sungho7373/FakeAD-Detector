@@ -13,7 +13,7 @@ RUN pip install --no-cache-dir --upgrade pip setuptools wheel
 
 # [단계 3] AI 이미지 처리 관련 무거운 라이브러리 먼저 설치
 RUN pip install --no-cache-dir opencv-python-headless
-RUN pip install --no-cache-dir paddlepaddle==2.6.1
+RUN pip install --no-cache-dir paddlepaddle==3.0.0
 RUN pip install --no-cache-dir paddleocr>=2.7.0
 
 # [단계 4] 나머지 일반 패키지 설치
