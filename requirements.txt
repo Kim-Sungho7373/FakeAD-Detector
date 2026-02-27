@@ -5,7 +5,6 @@ requests
 playwright
 python-dotenv
 openai
-openai-whisper
 --extra-index-url https://download.pytorch.org/whl/cpu
 torch
 sentence-transformers
@@ -13,4 +12,3 @@ python-mecab-ko
 numpy
 xgboost==1.7.6
 shap
-yt-dlp

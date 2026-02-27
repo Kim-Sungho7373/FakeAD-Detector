@@ -6,7 +6,7 @@ from step4_xai import XAIScorer # 🌟 Step 4 추가!
 
 def run_full_pipeline():
     print("==================================================")
-    print(" 🚀 [AtoZ 파이프라인] 과대광고 탐지 AI 시스템 가동")
+    print(" 🚀 [AtoZ 파이프라인] 과대광고 탐지 AI 시스템 가동 (크롤링/OCR 전용)")
     print("==================================================\n")
 
     # 1. 모델 및 엔진 초기화
@@ -16,36 +16,31 @@ def run_full_pipeline():
     rag_checker = FactCheckerRAG()
     xai_scorer = XAIScorer() # 🌟 XAI 엔진 가동!
 
-    target_video_url = "https://youtu.be/SJxSDRxd8Dc?si=t8dnIQciFulUlbVW"
+    # 🚨 유튜브 URL 제거, 상품 상세페이지 링크만 유지
     target_product_url = "https://brand.naver.com/pacsafe/products/9365045491"
 
-    # [Step 0] 데이터 수집
-    print("\n▶️ [Step 0] 멀티모달 데이터 수집 중...")
-    stt_text = ""
+    # [Step 0] 데이터 수집 (웹 크롤링/OCR 단일 파이프라인)
+    print("\n▶️ [Step 0] 웹페이지 텍스트 및 이미지 데이터 수집 중...")
+    
+    crawled_text = ""
     try:
-        audio_file = ingestion.extract_audio_from_video(target_video_url)
-        if audio_file:
-            stt_text = ingestion.run_stt(audio_file)
-    except Exception as e:
-        print(f"⚠️ 유튜브 추출 실패 (무시하고 진행): {e}")
-
-    ocr_text = ""
-    try:
-        ocr_text = ingestion.run_ocr_from_web(target_product_url)
+        # 변경된 step0 구조에 맞춰 run_ocr_from_web만 실행
+        crawled_text = ingestion.run_ocr_from_web(target_product_url)
     except Exception as e:
         print(f"⚠️ OCR 추출 실패: {e}")
 
-    combined_text = f"{stt_text}\n{ocr_text}"
-    if len(combined_text) == 0:
+    # 공백이나 None 처리 로직 추가
+    if not crawled_text or len(crawled_text.strip()) == 0:
         print("❌ 분석할 텍스트가 없어 종료합니다.")
         return
 
     # [Step 1, 2, 3] 텍스트 심층 분석
     print("\n▶️ [Step 1, 2, 3] 텍스트 심층 분석 가동...")
     
-    x1_score = lexical.calculate_x1_score(combined_text)
-    x2_score = semantic.calculate_x2_score(combined_text)
-    x3_score, matched_fact = rag_checker.calculate_x3_score(combined_text)
+    # stt_text가 빠졌으므로 combined_text 대신 crawled_text를 그대로 사용
+    x1_score = lexical.calculate_x1_score(crawled_text)
+    x2_score = semantic.calculate_x2_score(crawled_text)
+    x3_score, matched_fact = rag_checker.calculate_x3_score(crawled_text)
     
     # 🌟 [Step 4] XGBoost 스코어링 및 SHAP 분석
     print("\n▶️ [Step 4] XGBoost 기반 최종 스코어링 및 SHAP 설명 생성...")
