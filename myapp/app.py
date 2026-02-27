@@ -173,7 +173,7 @@ async def serve_frontend():
 
 # 🌟 3. 분석 API (웹 크롤링만 수행)
 @app.post("/api/analyze")
-async def api_analyze(req: AdRequest):
+def api_analyze(req: AdRequest):
     try:
         # Step 0: 데이터 수집 (웹 크롤링만 진행)
         # ingestion.run_ocr_from_web() 메서드가 BeautifulSoup 등을 이용해 텍스트를 추출한다고 가정
