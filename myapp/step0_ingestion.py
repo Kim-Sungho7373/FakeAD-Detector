@@ -70,7 +70,6 @@ class DataIngestionPipeline:
         # 🌟 해상도 한계치를 대폭 늘린 최신 세팅 적용
         ocr = PaddleOCR(
             lang='korean',
-            use_gpu=False, # 허깅페이스 CPU 환경 명시
             text_det_limit_side_len=2048,
             text_det_limit_type='max'
         )
