@@ -21,18 +21,20 @@ RUN pip install --no-cache-dir "paddleocr>=2.7.0"
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
+# 🚨 [수정 포인트 1] 루트(root) 권한일 때 OS 시스템 의존성만 설치
 RUN playwright install-deps chromium
-RUN playwright install chromium
 
 # ==========================================
 # 🌟 [핵심 수정] Hugging Face Spaces 유저 권한 설정
 # ==========================================
-# HF Spaces는 보안상 컨테이너 내부에서 root 실행을 차단합니다.
-# 따라서 uid 1000번의 일반 유저를 생성하고 권한을 넘겨야 합니다.
 RUN useradd -m -u 1000 user
 USER user
 ENV HOME=/home/user \
     PATH=/home/user/.local/bin:$PATH
+
+# 🚨 [수정 포인트 2] 유저(user)로 권한이 바뀐 직후에 브라우저 실제 파일 다운로드!
+# 이렇게 해야 /home/user/.cache/ms-playwright/ 위치에 정확히 설치됩니다.
+RUN playwright install chromium
 
 # 작업 디렉토리를 생성한 일반 유저의 폴더로 변경
 WORKDIR $HOME/app
@@ -40,12 +42,6 @@ WORKDIR $HOME/app
 # [단계 5] 내 코드 복사 (소유권을 방금 만든 user로 지정)
 COPY --chown=user:user . $HOME/app
 
-# [핵심 수정] 파이썬 경로에 myapp 폴더 추가
-# 변경된 작업 디렉토리($HOME/app)에 맞춰 경로를 업데이트합니다.
-ENV PYTHONPATH="${PYTHONPATH}:$HOME/app/myapp"
-
-# 외부 통신용 포트 개방
-EXPOSE 7860
-
 # [단계 6] 실행
-CMD ["uvicorn", "myapp.app:app", "--host", "0.0.0.0", "--port", "7860"]
+EXPOSE 7860
+CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "7860"]
