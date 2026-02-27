@@ -42,6 +42,12 @@ WORKDIR $HOME/app
 # [단계 5] 내 코드 복사 (소유권을 방금 만든 user로 지정)
 COPY --chown=user:user . $HOME/app
 
-# [단계 6] 실행
+# ==========================================
+# 🚨 [경로 복구] myapp 폴더 안의 파일들을 인식할 수 있도록 PYTHONPATH 추가
+# ==========================================
+ENV PYTHONPATH="${PYTHONPATH}:$HOME/app/myapp"
+
 EXPOSE 7860
-CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "7860"]
+
+# 🚨 [경로 복구] myapp 폴더 안의 app.py를 실행하도록 원상복구
+CMD ["uvicorn", "myapp.app:app", "--host", "0.0.0.0", "--port", "7860"]
