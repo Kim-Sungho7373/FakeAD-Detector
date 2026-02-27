@@ -356,7 +356,7 @@ def api_analyze(req: AdRequest):
 
         return {
             "status": "success",
-            "final_score": round(final_score, 1), # 🌟 소수점 1자리로 반올림 픽스!
+            "final_score": float(round(final_score, 1)), # 🌟 float()로 감싸주기!
             "x1_details": x1_details,
             "x2_details": x2_details,
             "x3_details": x3_details,
