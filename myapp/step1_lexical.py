@@ -3,7 +3,7 @@ from mecab import MeCab
 
 class LexicalAnalyzer:
     def __init__(self):
-        print("✅ Mecab 형태소 분석기를 로드합니다...")
+        print("✅ Loading the MeCab lexical analyzer...")
         self.mecab = MeCab()
         
         # 🚨 가중치(TF-IDF의 IDF 개념 차용)가 부여된 과대광고 사전
@@ -44,7 +44,7 @@ class LexicalAnalyzer:
         if not text:
             return 0.0
 
-        print("\n🔍 [Step 1] 텍스트 과장도(Lexical Score) 분석 시작...")
+        print("\n🔍 [Step 1] Starting lexical exaggeration analysis...")
         
         sentences = self.split_into_sentences(text)
         total_sentences = len(sentences)
@@ -67,12 +67,12 @@ class LexicalAnalyzer:
                     is_negated = self.check_negation_context(tokens, i)
                     
                     if is_negated:
-                        detected_issues.append(f"🛡️ 무죄(부정어 동반): '{word}' (문장: {sentence})")
+                        detected_issues.append(f"🛡️ Cleared by negation context: '{word}' (sentence: {sentence})")
                     else:
                         weight = self.lexicon[word]
                         total_penalty += weight
                         sentence_flagged = True
-                        detected_issues.append(f"🚨 적발: '{word}' (가중치: +{weight})")
+                        detected_issues.append(f"🚨 Flagged: '{word}' (weight: +{weight})")
             
             # 한 문장에 금칙어가 여러 번 나와도 1차원적으로 폭발하지 않도록 패널티 상한선 부여
             if sentence_flagged:
@@ -84,12 +84,12 @@ class LexicalAnalyzer:
         x1_score = min(raw_score, 100.0)
 
         # 결과 리포트 출력
-        print(f"\n[분석 리포트]")
-        print(f" - 전체 문장 수: {total_sentences}문장")
+        print(f"\n[Analysis Report]")
+        print(f" - Total sentences: {total_sentences}")
         for issue in detected_issues:
             print(f" {issue}")
             
-        print(f"📈 최종 X1 점수: {x1_score:.2f} / 100.0 점")
+        print(f"📈 Final X1 score: {x1_score:.2f} / 100.0")
         return x1_score
 
 # ==========================================
@@ -99,11 +99,11 @@ if __name__ == "__main__":
     analyzer = LexicalAnalyzer()
     
     print("==================================================")
-    print("테스트 1: 부정어가 포함된 정상적인 광고 (오탐 방지 테스트)")
+    print("Test 1: Legitimate ad with negation context (false-positive prevention)")
     test_text_1 = "이 제품은 식약처 인증을 받았습니다. 피부 트러블이나 부작용이 전혀 없습니다. 안심하고 사용하세요."
     analyzer.calculate_x1_score(test_text_1)
     
     print("\n==================================================")
-    print("테스트 2: 극단적인 과대광고 (허위 탐지 테스트)")
+    print("Test 2: Extreme exaggeration (false-ad detection test)")
     test_text_2 = "단 일주일 만에 지방이 100% 분해되는 기적을 경험하세요! 이것은 암도 완치하는 만병통치 약입니다. 무조건 구매하세요. 최고의 선택입니다."
     analyzer.calculate_x1_score(test_text_2)

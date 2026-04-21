@@ -4,7 +4,7 @@ import shap
 
 class XAIScorer:
     def __init__(self):
-        print("📊 [Step 4] XGBoost 앙상블 모델 및 SHAP 설명기(XAI) 로드 중...")
+        print("📊 [Step 4] Loading the XGBoost ensemble and SHAP explainer (XAI)...")
         
         # 1. PoC용 가상 데이터 생성 (실무에서는 실제 라벨링된 DB를 불러옵니다)
         # X1(단어), X2(문맥), X3(팩트체크) 점수를 랜덤 생성
@@ -25,9 +25,9 @@ class XAIScorer:
         )
         self.model.fit(X_train, y_train)
         
-        # 3. SHAP TreeExplainer 초기화 (XAI)
+        # 3. Initialize the SHAP TreeExplainer
         self.explainer = shap.TreeExplainer(self.model)
-        print("   -> 🧠 머신러닝 스코어링 엔진 세팅 완료!")
+        print("   -> 🧠 Machine-learning scoring engine is ready.")
 
     def calculate_final_score_and_explain(self, x1, x2, x3):
         # 입력값을 numpy 배열로 변환

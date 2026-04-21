@@ -5,7 +5,7 @@ import gc
 
 class SemanticAnalyzer:
     def __init__(self):
-        print("🧠 [Step 2] 의미론적 딥러닝 분석기(KoELECTRA)를 로드합니다...")
+        print("🧠 [Step 2] Loading the semantic deep-learning analyzer (KoELECTRA)...")
         
         # M1 Max GPU(MPS) 세팅
         self.device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
@@ -30,7 +30,7 @@ class SemanticAnalyzer:
             "이것만 먹으면 독소가 배출되고 세포가 즉각 재생됩니다",
             "의사들이 무조건 추천하는 부작용 없는 완치제"
         ]
-        print("   -> 레퍼런스 허위광고 문장들을 벡터(Vector) 공간에 배치 중...")
+        print("   -> Encoding reference misleading-ad sentences into vector space...")
         self.reference_embeddings = self._get_embeddings(self.reference_bad_texts)
 
     def clear_memory(self):
@@ -52,7 +52,7 @@ class SemanticAnalyzer:
         if not text or len(text.strip()) < 5:
             return 0.0
 
-        print("\n🧠 [Step 2] 딥러닝 문맥 및 유사도(Semantic) 분석 시작...")
+        print("\n🧠 [Step 2] Starting semantic context and similarity analysis...")
         
         # 너무 긴 텍스트는 PLM 한계(512토큰)에 걸리므로 잘라서 입력
         inputs = self.tokenizer(text, return_tensors="pt", truncation=True, max_length=512).to(self.device)
@@ -99,9 +99,9 @@ class SemanticAnalyzer:
         # 유사도 점수에 80%, 분류 점수에 20% 가중치를 주어 최종 점수를 만듭니다.
         x2_score = (similarity_score * 0.8) + (classification_score * 0.2)
         
-        print(f"   -> 📊 모델 분류 확률 (Softmax): {prob_fake*100:.1f}%")
-        print(f"   -> 🔗 최대 문맥 유사도 (Cosine Sim): {max_sim*100:.1f}%")
-        print(f"📈 최종 X2 점수 (0~100): {x2_score:.2f}점")
+        print(f"   -> 📊 Model classification probability (Softmax): {prob_fake*100:.1f}%")
+        print(f"   -> 🔗 Maximum contextual similarity (Cosine Sim): {max_sim*100:.1f}%")
+        print(f"📈 Final X2 score (0-100): {x2_score:.2f}")
         
         return x2_score
 

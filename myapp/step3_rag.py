@@ -6,12 +6,12 @@ from openai import OpenAI
 from sentence_transformers import SentenceTransformer, util
 from dotenv import load_dotenv
 
-# .env 파일에 저장된 OPENAI_API_KEY를 환경 변수로 로드합니다.
+# Load OPENAI_API_KEY from the .env file.
 load_dotenv()
 
 class FactCheckerRAG:
     def __init__(self):
-        print("📚 [Step 3] RAG + LLM 팩트체커를 로드합니다...")
+        print("📚 [Step 3] Loading the RAG + LLM fact checker...")
         
         # 기기 설정 (Mac의 경우 mps, 아니면 cpu)
         self.device = "mps" if torch.backends.mps.is_available() else "cpu"
@@ -22,7 +22,7 @@ class FactCheckerRAG:
         # OpenAI 클라이언트 초기화 (API 키는 환경변수에서 안전하게 가져옴)
         api_key = os.getenv("OPENAI_API_KEY")
         if not api_key:
-            print("⚠️ 경고: OPENAI_API_KEY가 설정되지 않았습니다. .env 파일을 확인하세요.")
+            print("⚠️ Warning: OPENAI_API_KEY is not set. Please check your .env file.")
         
         self.client = OpenAI(api_key=api_key)
         
@@ -47,9 +47,9 @@ class FactCheckerRAG:
         self.db_embeddings = self.retriever.encode(self.fact_db, convert_to_tensor=True)
 
     def calculate_x3_score(self, text):
-        """RAG 기반으로 광고 텍스트의 위반 점수를 계산합니다."""
+        """Calculate a regulatory violation score for ad copy via RAG."""
         if not text or len(text.strip()) < 5:
-            return 0.0, "검사할 텍스트가 부족합니다."
+            return 0.0, "Not enough text was provided for inspection."
 
         try:
             # 1. 관련 규정 검색 (Retrieval)
@@ -60,18 +60,18 @@ class FactCheckerRAG:
             
             # 2. LLM 심사 (Generation)
             prompt = f"""
-            당신은 대한민국 식약처 및 공정위의 과대광고 심사관입니다.
-            아래 [관련 규정]을 바탕으로 [광고 텍스트]의 위반 여부를 판단하세요.
-            
-            [관련 규정]: {retrieved_fact}
-            [광고 텍스트]: {text}
-            
-            반드시 아래 형식으로만 응답하세요:
-            점수: [0~100 사이 숫자]
-            사유: [위반인 경우 구체적 근거, 아니면 허용 근거를 1~2줄로 설명]
+            You are a regulatory reviewer for misleading food and advertising claims in Korea.
+            Based on the [Relevant Regulation] below, assess whether the [Ad Copy] is non-compliant.
+
+            [Relevant Regulation]: {retrieved_fact}
+            [Ad Copy]: {text}
+
+            Reply only in the following format:
+            Score: [number between 0 and 100]
+            Reason: [1-2 lines explaining the specific basis for non-compliance, or why the claim appears acceptable]
             """
             
-            print("   -> 🤖 GPT 심사관이 분석 중...")
+            print("   -> 🤖 GPT reviewer is analyzing the content...")
             response = self.client.chat.completions.create(
                 model="gpt-3.5-turbo",
                 messages=[{"role": "user", "content": prompt}],
@@ -79,17 +79,16 @@ class FactCheckerRAG:
             )
             
             result_text = response.choices[0].message.content
-            print(f"   [결과] {result_text}")
+            print(f"   [Result] {result_text}")
             
-            # 점수 파싱
-            score_match = re.search(r"점수:\s*(\d+)", result_text)
+            score_match = re.search(r"Score:\s*(\d+)", result_text)
             x3_score = float(score_match.group(1)) if score_match else 0.0
             
             return x3_score, retrieved_fact
             
         except Exception as e:
-            print(f"⚠️ 에러 발생: {e}")
-            return 0.0, "분석 중 오류가 발생했습니다."
+            print(f"⚠️ Error occurred: {e}")
+            return 0.0, "An error occurred during analysis."
 
 # 앙상블 점수 계산기
 def calculate_final_score(x1, x2, x3):
@@ -103,9 +102,9 @@ def calculate_final_score(x1, x2, x3):
 
 if __name__ == "__main__":
     checker = FactCheckerRAG()
-    test_ad = "이 차를 마시면 암 예방은 물론 당뇨 수치가 즉각 떨어집니다!"
+    test_ad = "Drink this tea and not only prevent cancer, but also instantly lower your blood sugar!"
     
     score, fact = checker.calculate_x3_score(test_ad)
     print("-" * 30)
-    print(f"최종 위반 점수: {score}")
-    print(f"참조 규정: {fact}")
+    print(f"Final violation score: {score}")
+    print(f"Referenced regulation: {fact}")
