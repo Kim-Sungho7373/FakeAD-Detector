@@ -8,7 +8,9 @@ openai
 --extra-index-url https://download.pytorch.org/whl/cpu
 torch
 sentence-transformers
+transformers
 python-mecab-ko
 numpy
 xgboost==1.7.6
 shap
+paddleocr

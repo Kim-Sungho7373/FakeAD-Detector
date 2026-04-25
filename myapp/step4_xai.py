@@ -4,18 +4,21 @@ import shap
 
 class XAIScorer:
     def __init__(self):
-        print("📊 [Step 4] Loading the XGBoost ensemble and SHAP explainer (XAI)...")
+        print("📊 [Step 4] Loading the XAI Scoring Engine (XGBoost + SHAP)...")
         
-        # 1. PoC용 가상 데이터 생성 (실무에서는 실제 라벨링된 DB를 불러옵니다)
-        # X1(단어), X2(문맥), X3(팩트체크) 점수를 랜덤 생성
+        # 1. Generating synthetic data for PoC training
+        # Features: X1 (Lexical Bait), X2 (Semantic Intent), X3 (Regulatory Violation)
         np.random.seed(42)
         X_train = np.random.rand(1000, 3) * 100 
         
-        # 가상의 정답(Label) 생성 로직: X2와 X3가 높을수록 과대광고(1)일 확률이 높음
-        # y = 1 (과대광고), y = 0 (정상)
+        # Hypothetical labeling logic: 
+        # In subscription traps, Regulatory non-compliance (X3) and Semantic intent (X2) 
+        # carry the most weight in determining a 'Deceptive' label.
+        # Target: 1 (Deceptive/Trap), 0 (Compliant)
         y_train = ((X_train[:, 0]*0.2 + X_train[:, 1]*0.4 + X_train[:, 2]*0.4) > 50).astype(int)
 
-        # 2. XGBoost 모델 정의 및 학습 (Logistic 변환 내장)
+        # 2. Define and train the XGBoost Classifier
+        # This model acts as the 'decision-making brain' of the auditor.
         self.model = xgb.XGBClassifier(
             n_estimators=50, 
             max_depth=3, 
@@ -26,35 +29,58 @@ class XAIScorer:
         self.model.fit(X_train, y_train)
         
         # 3. Initialize the SHAP TreeExplainer
+        # This allows us to see exactly how each feature influenced the final risk score.
         self.explainer = shap.TreeExplainer(self.model)
-        print("   -> 🧠 Machine-learning scoring engine is ready.")
+        print("   -> 🧠 Machine-learning scoring engine is ready (Global Version).")
 
     def calculate_final_score_and_explain(self, x1, x2, x3):
-        # 입력값을 numpy 배열로 변환
+        """
+        Calculates the probability of being a Dark Pattern and provides an XAI trace.
+        x1: Lexical Score, x2: Semantic Score, x3: RAG Compliance Score
+        """
+        # Convert input scores into a numpy array for the model
         X_input = np.array([[x1, x2, x3]])
         
         # =========================================================
-        # 1. 최종 스코어링 (Logistic/Sigmoid 변환)
-        # XGBoost의 predict_proba는 내부적으로 Z값에 Sigmoid를 씌워 0~1 확률을 반환합니다.
+        # 1. Final Risk Scoring
+        # Predict_proba returns the probability of class 1 (Deceptive)
         # =========================================================
         probabilities = self.model.predict_proba(X_input)
-        final_score = probabilities[0][1] * 100  # 클래스 1(과대광고)일 확률을 100점 만점으로 변환
+        final_score = probabilities[0][1] * 100  # Scale to 0-100 range
         
         # =========================================================
-        # 2. XAI (SHAP Value 계산)
+        # 2. XAI (SHAP Value Calculation)
+        # SHAP explains the deviation from the base value (average prediction).
         # =========================================================
         shap_values = self.explainer.shap_values(X_input)
         
-        # 이진 분류의 경우 버전/세팅에 따라 리스트로 나올 수 있으므로 안전하게 추출
+        # Handle different SHAP output formats (list or array)
         if isinstance(shap_values, list):
+            # For binary classification, we take the values for the positive class (1)
             shap_vals = shap_values[1][0] 
+        elif len(shap_values.shape) == 3: # Some versions return (obs, class, features)
+            shap_vals = shap_values[0][1]
         else:
             shap_vals = shap_values[0]
 
-        # Base Value (모델의 평균 예측값/절편)
+        # Extract the Base Value (The average risk score of the training set)
         if isinstance(self.explainer.expected_value, (list, np.ndarray)):
             base_value = self.explainer.expected_value[1]
         else:
             base_value = self.explainer.expected_value
 
+        # Note: final_score ≈ (base_value + sum(shap_vals)) * 100
         return final_score, shap_vals, base_value
+
+if __name__ == "__main__":
+    scorer = XAIScorer()
+    # Example: A page with some lexical bait but high semantic deception and regulatory failure
+    f_score, s_vals, b_val = scorer.calculate_final_score_and_explain(30.0, 75.0, 85.0)
+    
+    print("\n" + "="*50)
+    print(f"Audit Result: {f_score:.2f}% Deception Probability")
+    print("-" * 50)
+    print(f"Lexical Impact: {s_vals[0]:+.2f}")
+    print(f"Semantic Impact: {s_vals[1]:+.2f}")
+    print(f"Regulatory Impact: {s_vals[2]:+.2f}")
+    print("="*50)
